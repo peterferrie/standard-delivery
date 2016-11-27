@@ -88,9 +88,10 @@ delay
         jmp     $FCA8           ;common delay for all phases
 
 jmpoep
-        jmp     $1234
+        jmp     $1234           ;arbitrary entry-point to use after read completes
+                                ;set to the value that you need
 
 adrtable
-;15 slots for track 0 (track 0 sector 0 is not addressible)
+;15 slots for track 0 (track 0 sector 0 is not addressable)
 ;16 slots for all other tracks
 !byte $FF ;end of list
