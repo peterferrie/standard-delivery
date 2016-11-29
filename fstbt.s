@@ -58,12 +58,7 @@ adrindex
         lda     adrtable - 1    ;15 entries in first row, 16 entries thereafter
         beq     incsector       ;skip empty slots to allow sparse tracks
         sta     $27             ;set high part of address
-        tay
-!if enable_banked=0 {
-        iny                     ;detect #$FF (end of data)
-} else {
-        dey                     ;detect #$01 (end of data)
-}
+        cmp     #$C0            ;detect end of data
         beq     jmpoep          ;end of data
 
         ;convert slot to PROM address
@@ -113,4 +108,4 @@ jmpoep
 adrtable
 ;15 slots for track 0 (track 0 sector 0 is not addressable)
 ;16 slots for all other tracks, fill with addresses, 0 to skip any sector
-!byte 1 ;end of list, can't load to stack
+!byte $C0 ;end of list, can't load to stack
