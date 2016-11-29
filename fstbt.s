@@ -6,6 +6,13 @@
 !to "fstbt",plain
 *=$800
 
+        enable_stack = 0        ;set to 1 to enable reading into stack (mutually exclusive with enable_banked)
+        enable_banked = 0       ;set to bank number (1 or 2) to enable reading into banked RAM
+
+!if (enable_stack+enable_banked)=2 {
+  !error can't enable both options
+}
+
 !byte 1
 
         tay                     ;A is last read sector+1 on entry
@@ -37,14 +44,27 @@ incindex
         sty     $3d             ;set sector
         iny                     ;prepare to be next sector in case of unallocated sector
         inc     adrindex + 1    ;select next address
+!if enable_banked=1 {
+        lda     $C08B
+        lda     $C08B
+} else {
+  !if enable_banked=2 {
+        lda     $C083
+        lda     $C083
+  }
+}
 
 adrindex
         lda     adrtable - 1    ;15 entries in first row, 16 entries thereafter
         beq     incsector       ;skip empty slots to allow sparse tracks
         sta     $27             ;set high part of address
         tay
-        iny
-        beq     jmpoep          ;#$FF means end of data
+!if enable_banked=0 {
+        iny                     ;detect #$FF (end of data)
+} else {
+        dey                     ;detect #$01 (end of data)
+}
+        beq     jmpoep          ;end of data
 
         ;convert slot to PROM address
 
@@ -53,37 +73,36 @@ adrindex
         lsr
         lsr
         lsr
-        ora     #$c0
+        ora     #$C0
         pha
         lda     #$5B            ;read-1
         pha
         rts                     ;return to PROM
 
-        ;requires carry set on entry
-        ;carry is set by cpy above
-        ;and by wait below
-
 seek
         inc     $41             ;next track
+        asl     $40             ;carry clear, phase off
         jsr     seek1
+        clc                     ;carry clear, phase off
 
-seek1                           ;phase on
-        inc     phase + 1
-
-phase
-        ldy     #0              ;self-modified
-        jsr     delay
-        clc                     ;phase off
-        ldy     phase + 1
-        dey
+seek1
+        jsr     delay           ;returns with carry set, phase on
+        inc     $40
 
 delay
-        tya
+        lda     $40
         and     #3
         rol
         ora     $2B             ;merge in slot
         tay
         lda     $C080, y
+!if enable_banked = 1 {
+        lda     $C089
+} else {
+  !if enable_banked = 2 {
+        lda     $C081
+  }
+}
         lda     #$30
         jmp     $FCA8           ;common delay for all phases
 
@@ -93,5 +112,5 @@ jmpoep
 
 adrtable
 ;15 slots for track 0 (track 0 sector 0 is not addressable)
-;16 slots for all other tracks
-!byte $FF ;end of list
+;16 slots for all other tracks, fill with addresses, 0 to skip any sector
+!byte 1 ;end of list, can't load to stack
