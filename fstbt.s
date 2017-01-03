@@ -11,12 +11,8 @@
 !byte 1
 
         tay                     ;A is last read sector+1 on entry
-!if enable_banked=1 {
-        lda     $C089           ;bank in ROM while leaving RAM write-enabled if it was before
-} else {
-  !if enable_banked=2 {
-        lda     $C081           ;bank in ROM while leaving RAM write-enabled if it was before
-  }
+!if enable_banked > 0 {
+        lda     $C081           ;bank in ROM
 }
 
         ;check array before checking sector number
@@ -63,22 +59,17 @@ setsector
         ;convert slot to PROM address
 
         txa
-        lsr
-        lsr
-        lsr
-        lsr
+        jsr     $F87B           ;4xlsr
         ora     #$C0
         pha
         lda     #$5B            ;read-1
         pha
-!if enable_banked=1 {
-        lda     $C08B
-        lda     $C08B           ;write-enable RAM and bank it in so read can decode
-} else {
-  !if enable_banked=2 {
-        lda     $C083
-        lda     $C083           ;write-enable RAM and bank it in so read can decode
-  }
+
+!if enable_banked > 0 {
+writeenable
+        lda     $C093-(enable_banked*8)
+        lda     $C093-(enable_banked*8)
+                                ;write-enable RAM and bank it in so read can decode
 }
         rts                     ;return to PROM
 
@@ -103,12 +94,8 @@ delay
         jmp     $FCA8           ;common delay for all phases
 
 jmpoep
-!if enable_banked = 1 {
-        lda     $C08B           ;bank in our RAM, write-enabled
-} else {
-  !if enable_banked = 2 {
-        lda     $C083           ;bank in our RAM, write-enabled
-  }
+!if enable_banked > 0 {
+        jsr     writeenable     ;bank in our RAM, write-enabled
 }
         jmp     $1234           ;arbitrary entry-point to use after read completes
                                 ;set to the value that you need
