@@ -27,6 +27,7 @@ adrindex
         cmp     #$C0
         beq     jmpoep          ;#$C0 means end of data
         sta     $27             ;set high part of address
+        lda     #1              ;preload in case we are finished with the first round
 
         ;2, 4, 6, 8, $0A, $0C, $0E
         ;because PROM increments by one itself
@@ -45,10 +46,8 @@ adrindex
 
         ;back to 0
 
-        tay
-        !byte   $2C             ;mask LDY #1
 sector1
-        ldy     #1
+        tay
 
 setsector
         sty     $3D             ;set sector
