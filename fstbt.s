@@ -1,3 +1,4 @@
+;license:BSD-3-Clause
 ;fast boot-loader in one sector
 ;copyright (c) Peter Ferrie 2016
 ;thanks to 4am for inspiration and testing
